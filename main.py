@@ -18,16 +18,17 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor(buffered=True)
 
+# users table
+mycursor.execute(
+    "CREATE TABLE users (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,username VARCHAR(255) NOT NULL,password VARCHAR(255) NOT NULL);")
 
-#Add table users
-mycursor.execute("CREATE TABLE users (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,username VARCHAR(255) NOT NULL,password VARCHAR(255) NOT NULL);")
+# URLs table
+mycursor.execute("CREATE TABLE URLs (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,user_id INTEGER NOT NULL REFERENCES users(id), address VARCHAR (255) NOT NULL, threshold INTEGER NOT NULL, failed_times INTEGER NOT NULL DEFAULT 0);")
 
-
+# requests table
+mycursor.execute("CREATE TABLE Requests (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,url_id INTEGER NOT NULL REFERENCES URLs(id),result INTEGER NOT NULL);")
 app = Flask(__name__)
 app.secret_key = "shayan-bali"  # This should be kept secret
-
-
-
 
 
 # Add login function with JWT AUTH
@@ -49,9 +50,6 @@ def login():
         return jsonify({"msg": "Invalid credentials"}), 401
 
 
-
-
-
 # Check user JWT and verify it
 @app.route('/protected', methods=['GET'])
 def protected():
@@ -69,6 +67,7 @@ def protected():
             return jsonify({"msg": "Invalid token"}), 401
     except jwt.DecodeError:
         return jsonify({"msg": "Invalid token"}), 401
+
 
 4
 
