@@ -18,8 +18,16 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor(buffered=True)
 
+
+#Add table users
+mycursor.execute("CREATE TABLE users (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,username VARCHAR(255) NOT NULL,password VARCHAR(255) NOT NULL);")
+
+
 app = Flask(__name__)
 app.secret_key = "shayan-bali"  # This should be kept secret
+
+
+
 
 
 # Add login function with JWT AUTH
@@ -41,6 +49,9 @@ def login():
         return jsonify({"msg": "Invalid credentials"}), 401
 
 
+
+
+
 # Check user JWT and verify it
 @app.route('/protected', methods=['GET'])
 def protected():
@@ -58,6 +69,9 @@ def protected():
             return jsonify({"msg": "Invalid token"}), 401
     except jwt.DecodeError:
         return jsonify({"msg": "Invalid token"}), 401
+
+4
+
 
 # Add new user to website
 @app.route('/api/users', methods=['POST'])
