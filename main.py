@@ -1,4 +1,4 @@
-import mysql
+import mysql.connector
 import jwt
 from flask import Flask, request, jsonify
 
@@ -23,10 +23,13 @@ mycursor.execute(
     "CREATE TABLE users (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,username VARCHAR(255) NOT NULL,password VARCHAR(255) NOT NULL);")
 
 # URLs table
-mycursor.execute("CREATE TABLE URLs (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,user_id INTEGER NOT NULL REFERENCES users(id), address VARCHAR (255) NOT NULL, threshold INTEGER NOT NULL, failed_times INTEGER NOT NULL DEFAULT 0);")
+mycursor.execute(
+    "CREATE TABLE URLs (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,user_id INTEGER NOT NULL REFERENCES users(id), address VARCHAR (255) NOT NULL, threshold INTEGER NOT NULL, failed_times INTEGER NOT NULL DEFAULT 0);")
 
 # requests table
-mycursor.execute("CREATE TABLE Requests (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,url_id INTEGER NOT NULL REFERENCES URLs(id),result INTEGER NOT NULL);")
+mycursor.execute(
+    "CREATE TABLE Requests (id SERIAL PRIMARY KEY,created_at TIMESTAMP NOT NULL DEFAULT NOW(),updated_at TIMESTAMP,deleted_at TIMESTAMP,url_id INTEGER NOT NULL REFERENCES URLs(id),result INTEGER NOT NULL);")
+
 app = Flask(__name__)
 app.secret_key = "shayan-bali"  # This should be kept secret
 
@@ -84,3 +87,29 @@ def create_user():
     mydb.commit()
 
     return jsonify({"msg": "User created successfully"}), 200
+
+@app.route('/api/urls', methods=['POST'])
+def create_new_url():
+    # decode jwt token
+    try:
+        jwt_token = request.headers.get('Authorization')
+        data = jwt.decode(jwt_token, 'secret')
+    except:
+        return jsonify({'error': 'Invalid token'}), 401
+
+    # extract url address and threshold from request body
+    url_address = request.json['address']
+    threshold = request.json['threshold']
+
+    # insert new url into URLs table
+    mycursor.execute("INSERT INTO URLs (address, threshold, user_id) VALUES (%s, %s, %s)", (url_address, threshold,data['user_id']))
+    mydb.commit()
+    return jsonify({'message': 'URL created successfully'}), 201
+
+
+
+
+
+
+if __name__ == '__main__':
+    app.run()
