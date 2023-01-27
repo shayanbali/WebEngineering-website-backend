@@ -77,7 +77,7 @@ def protected():
 
 # Add new user to website
 @app.route('/api/users', methods=['POST'])
-def create_user():
+def signup_user():
     # Get new user's credentials from request data
     username = request.json['username']
     password = request.json['password']
@@ -88,6 +88,7 @@ def create_user():
 
     return jsonify({"msg": "User created successfully"}), 200
 
+# Add new URL to database
 @app.route('/api/urls', methods=['POST'])
 def create_new_url():
     # decode jwt token
@@ -107,8 +108,20 @@ def create_new_url():
     return jsonify({'message': 'URL created successfully'}), 201
 
 
+#get URLs of specific user
+@app.route('/api/urls', methods=['GET'])
+def get_user_urls():
+    # decode jwt token
+    try:
+        jwt_token = request.headers.get('Authorization')
+        data = jwt.decode(jwt_token, 'secret')
+    except:
+        return jsonify({'error': 'Invalid token'}), 401
 
-
+    user_id = data['user_id']
+    mycursor.execute("SELECT id, address, threshold, failed_times FROM URLs WHERE user_id = %s", (user_id,))
+    urls = mycursor.fetchall()
+    return jsonify({'urls': urls}), 200
 
 
 if __name__ == '__main__':
