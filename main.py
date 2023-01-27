@@ -1,6 +1,7 @@
 import mysql.connector
 import jwt
 from flask import Flask, request, jsonify
+import requests
 
 # Connect to database
 HOST = "mysql-cc-hw1-shayanbali-shayanbali3-bfff.aivencloud.com"
@@ -122,6 +123,37 @@ def get_user_urls():
     mycursor.execute("SELECT id, address, threshold, failed_times FROM URLs WHERE user_id = %s", (user_id,))
     urls = mycursor.fetchall()
     return jsonify({'urls': urls}), 200
+
+
+
+
+
+def send_req(url_id):
+
+    # retrieve the url address from the URLs table using the url_id
+    mycursor.execute("SELECT address FROM URLs WHERE id = %s", (url_id,))
+    url = mycursor.fetchone()[0]
+
+
+    try:
+        # send a GET request to the url
+        response = requests.get(url)
+        # get the status code of the response
+        status_code = response.status_code
+    except requests.exceptions.RequestException as e:
+        # if an exception occurs, store the exception as the status code
+        status_code = e.args[0]
+
+
+    # insert the url_id and the status code into the Requests table
+    mycursor.execute("INSERT INTO Requests (url_id, result) VALUES (%s, %s)", (url_id, status_code))
+    mydb.commit()
+
+    if status_code >= 400:
+
+        # increment the failed_times field in the URLs table for the specific url_id
+        mycursor.execute("UPDATE URLs SET failed_times = failed_times + 1 WHERE id = %s", (url_id,))
+        mydb.commit()
 
 
 if __name__ == '__main__':
